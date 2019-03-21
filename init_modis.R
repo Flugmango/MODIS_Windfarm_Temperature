@@ -5,71 +5,41 @@ library(rgdal)
 library(MODIS)
 library(raster)
 library(mapview)
+# library(parallel)
 
+# setwd("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature")
 #preparation
 lap = "./MODIS"
 odp = file.path(lap, "PROCESSED")
 MODISoptions(localArcPath = lap, outDirPath = odp)
 
-#----------------------------
-#CUSTOM CRS APPROACH
-runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin="2000055", end="2000060", SDSstring="10001", outProj="28354")
-
-#Data subsetting
-#creating bounding box spatial polygon
-bbox_wgs84 = as(raster::extent(138.858948, 139.113693, -34.355908, -33.966142), "SpatialPolygons")
-proj4string(bbox_wgs84) = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-plot(bbox_wgs84)
-
-bbox_gda94 = spTransform(bbox_wgs84, CRS("+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
-# plot(bbox_gda94)
-
-# x <- readGDAL("C:/Users/Boris/Documents/MODIS/PROCESSED/MOD11A1.006_20190217124837/MOD11A1.A2000055.LST_Day_1km.tif")
-x <- readGDAL("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature/MODIS/PROCESSED/MOD11A1.006_20190312131640/MOD11A1.A2000056.LST_Day_1km.tif")
-
-bbox_matrix = cbind(c(303090.1, 302182.6, 325722.6, 326522.0, 303090.1),c(6196304, 6239533, 6239995, 6196769, 6196304))
-p = Polygon(bbox_matrix)
-ps = Polygons(list(p),1)
-sps = SpatialPolygons(list(ps))
-proj4string(sps) = CRS("+proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs")
-temp = data.frame(f=99.9)
-spdf = SpatialPolygonsDataFrame(sps,temp)
-
-x = raster(x)
-result = crop(x, spdf)
-
-# x1 = mapview(bbox_gda94, native.crs= TRUE)
-# x2 = mapview(x, native.crs= TRUE)
-# latticeView(x1, x2)
-# plot(x)
 
 #----------------------------
 #WGS84 APPROACH
+# bbox creation
+bbox= extent(138.858948, 139.113693, -34.355908, -33.966142)
 #Download Data
-runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin="2000055", end="2000060", SDSstring="10001", outProj="4326")
-#Import .tif
-x <- readGDAL("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature/MODIS/PROCESSED/MOD11A1.006_20190312151749/MOD11A1.A2000056.LST_Day_1km.tif")
+runGdal( product="MOD11A1", extent = bbox, begin="2011068", end="2018365", SDSstring="10001", outProj="4326")
+# runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin="2000001", end="2018365", SDSstring="10001", outProj="4326")
+# runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin=as.Date("2000-1-1"), end=as.Date("2018-12-31"), SDSstring="10001", outProj="4326")
+# x <- readGDAL("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature/MODIS/PROCESSED/MOD11A1.006_20190312151749/MOD11A1.A2000056.LST_Day_1km.tif")
+#make x croppable
+# x = raster(x)
 
-bbox_matrix = cbind(c(138.858948, 138.858948, 139.113693, 139.113693, 138.858948),c(-33.966142, -34.355908, -34.355908, -33.966142, -33.966142))
-p = Polygon(bbox_matrix)
-ps = Polygons(list(p),1)
-sps = SpatialPolygons(list(ps))
-proj4string(sps) = CRS("+proj=longlat +datum=WGS84 +no_defs +ellps=WGS84 +towgs84=0,0,0")
-temp = data.frame(f=99.9)
-spdf = SpatialPolygonsDataFrame(sps,temp)
+# processing data
+files <- list.files(path="./MODIS/PROCESSED/MOD11A1.006_20190314172848", pattern="*.tif$", full.names=TRUE)
+files_stack <- stack(files)
+files_50 = files_stack / 50
+avg_files_stack = cellStats(files_stack, mean)
+lapply(files, function(x) {
+  #read .tif
+  curr_raster <- readGDAL(x)
+  # crop
+  out <- function(curr_raster) {
+  }
+    # write to file
+    write.table(out, "./MODIS/", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+})
+# result = crop(x, bbox)
 
-x = raster(x)
-result = crop(x, spdf)
-
-mapview(result)
-
-
-
-#backup
-# outProj: 4326 = WGS84; 3112 = GDA94 / Geoscience Australia Lambert; 8059 South Australia
-# bbox frost damage GDA94: 443019.7219,-3873566.1926,467169.3498,-3835464.7163
-# bbox frost damage WGS84: 138.858948,-34.355908,139.113693,-33.966142
-# runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin="2000055", end="2000060", SDSstring="10001", outProj="28354")
-# 28354 +proj=utm +zone=54 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs
-#MODIS terra data download
-# runGdal(product="MOD11A1", extent = 'Australia', begin="2000055", end="2000060", SDSstring="10001", outProj="28354")
+# mapview(result)
