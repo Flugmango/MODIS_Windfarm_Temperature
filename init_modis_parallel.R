@@ -1,9 +1,16 @@
-#init_modis
+#init_modis_parallel
 
 #load dependencies
 library(rgdal)
 library(MODIS)
 library(mapview)
+library(parallel)
+
+#prepare parallelization
+#calculate number of cores
+no_cores = max(1, detectCores() -1)
+#initiate cluster
+cl = makeCluster(no_cores)
 
 setwd("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature")
 #preparation
@@ -25,19 +32,24 @@ runGdal( product="MOD11A1", extent = bbox, begin="2018001", end="2018365", SDSst
 files <- list.files(path="./MODIS/PROCESSED/MOD11A1.006_20190314172848", pattern="*.tif$", full.names=TRUE)
 stack = stack(files)
 
-# saving
-save(stack, file="./temp/terra_stack.RData")
-load("./temp/terra_stack.RData")
+# save(stack, file="./temp/terra_stack.RData")
+# load("./temp/terra_stack.RData")
 
+# clusterExport(cl, "files") #not sure if needed
+parLapply(cl, stack, function(raster_kelvin){
+  raster_celsius = (raster_kelvin / 50) - 273.15
+  # save(raster_celsius, file="files_celsius.RData")
+}
+)
 # writeRaster(files_stack, filename="multilayer.tif", options="INTERLEAVE=BAND", overwrite=TRUE)
-# 
-# downscale and transform kelvin to celsius: takes almost 45 minutes
+# downscale and transform kelvin
+#takes almost 45 minutes
 celsius_stack = (stack / 50) - 273.15
-
 #saving
 save(celsius_stack, file="./temp/terra_stack_celsius.RData")
 load("./temp/terra_stack_celsius.RData")
 #free the resources
+stopCluster(cl)
 
 
 
