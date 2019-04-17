@@ -36,5 +36,8 @@ vignettes/*.pdf
 rsconnect/
 .Rproj.user
 
-# Ignore MODIS Output Folder
+# Ignore MODIS output folder
 MODIS/
+
+# Ignore temp folder for saved variables
+temp/
