@@ -41,3 +41,6 @@ MODIS/
 
 # Ignore temp folder for saved variables
 temp/
+
+#Ignore kendall_output folder
+kendall_output/
