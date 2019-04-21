@@ -4,6 +4,7 @@
 library(rgdal)
 library(MODIS)
 library(mapview)
+library(Kendall)
 
 setwd("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature")
 #preparation
@@ -37,29 +38,15 @@ celsius_stack = (stack / 50) - 273.15
 #saving
 save(celsius_stack, file="./temp/terra_stack_celsius.RData")
 load("./temp/terra_stack_celsius.RData")
-#free the resources
 
+#Kendall analysis
 
+# fun_kendall <- function(x){ return(unlist(MannKendall(x)))}
+fun_kendall <- function(x){ return(unlist(MannKendall(x)))}
+kendall_result <- calc(celsius_stack,fun_kendall)
 
-
-
-
-
-
-# function for processing rasters
-# parLapply(files, function(x) {
-#   #read .tif
-#   curr_raster <- readGDAL(x)
-#   # crop
-#   out <- function(curr_raster) {
-#   }
-#     # write to file
-#     write.table(out, "./MODIS/", sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
-# })
-
-# x <- readGDAL("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature/MODIS/PROCESSED/MOD11A1.006_20190312151749/MOD11A1.A2000056.LST_Day_1km.tif")
-# make x croppable
-# x = raster(x)
-# result = crop(x, bbox)
-
-# mapview(result)
+x1 <- writeRaster(kendall_result, filename = "./kendall_output/MODIS_terra_layer_1.tif", format="GTiff", overwrite=TRUE)
+x2 <- writeRaster(kendall_result$layer.2, filename = "./kendall_output/MODIS_terra_layer_2.tif", format="GTiff", overwrite=TRUE)
+x3 <- writeRaster(kendall_result$layer.3, filename = "./kendall_output/MODIS_terra_layer_3.tif", format="GTiff", overwrite=TRUE)
+x4 <- writeRaster(kendall_result$layer.4, filename = "./kendall_output/MODIS_terra_layer_4.tif", format="GTiff", overwrite=TRUE)
+x5 <- writeRaster(kendall_result$layer.5, filename = "./kendall_output/MODIS_terra_layer_5.tif", format="GTiff", overwrite=TRUE)
