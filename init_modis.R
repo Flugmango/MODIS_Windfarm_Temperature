@@ -1,8 +1,16 @@
 #init_modis
-#load dependencies
+
 library(devtools)
+
+#install dependencies
+
 # install_github('loicdtx/bfastSpatial')
 # install.packages("greenbrown", repos="http://R-Forge.R-project.org")
+# install_github("MLezamaValdes/LocST") 
+
+#load dependencies
+
+library(LocST)
 library(bfastSpatial)
 library(greenbrown)
 library(rgdal)
@@ -11,9 +19,8 @@ library(mapview)
 library(bfastSpatial)
 library(Kendall)
 
-setwd("C:/Users/Flugmango/Documents/MODIS_Windfarm_Temperature")
-source("locmodisviewtime_LocST.R")
 #preparation
+setwd("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature")
 lap = "./MODIS"
 odp = file.path(lap, "PROCESSED")
 MODISoptions(localArcPath = lap, outDirPath = odp)
@@ -24,9 +31,8 @@ MODISoptions(localArcPath = lap, outDirPath = odp)
 # bbox creation
 bbox= extent(138.858948, 139.113693, -34.355908, -33.966142)
 #Download Data
-runGdal( product="MOD11A1", extent = bbox, begin="2001001", end="2018365", SDSstring="1010101", outProj="4326")
+runGdal( product="MOD11A1", extent = bbox, begin="2008316", end="2018365", SDSstring="1010101", outProj="4326")
 
-# runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin="2000001", end="2018365", SDSstring="10001", outProj="4326")
 # runGdal( product="MOD11A1", tileH = 29, tileV = 12, begin=as.Date("2000-1-1"), end=as.Date("2018-12-31"), SDSstring="10001", outProj="4326")
 
 # processing data
@@ -36,7 +42,7 @@ stack = stack(files)
 end_time <- Sys.time()
 #reclassify files for frost-/no-frost-events
 # reclassify the values into two groups: below 1°C = 1, higher than 1°C = 0
-rc <- reclassify(stack, c(-Inf,1,1, 1,Inf,0))
+rc <- reclassify(stack, c(-Inf,1,1,1,Inf,0))
 
 
 # saving
@@ -68,14 +74,16 @@ mapview(summary_stack)
 
 #######adding time vector on hold
 
-#converting LST to LT
-# fnam <- "./MODIS/MODIS/MOD11A1.006/MOD11A1.A2019137.h29v12.006.2019138085521.hdf"
-# ra <- c(138.858948, 139.113693, -34.355908, -33.966142)
-# viewtime <- raster("./MODIS/PROCESSED/MOD11A1.006_20190521001332/MOD11A1.A2019137.Day_view_time.tif")
 # ltz <- "Australia/Adelaide"   # https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 # newproj <- "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-# 
-# locmodisviewtime(fnam, viewtime, ra, ltz, newproj)
+
+lst <- raster("./MODIS/PROCESSED/MOD11A1_VT_2001_2018/MOD11A1.A2001001.Day_view_time.tif")
+utc <- strptime(c("2001001"), format="%Y%j", tz="UTC") #get utc day from filename with strptime(c("2016001"), format="%Y%j", tz="UTC")
+ltz <- "Australia/Adelaide"
+
+LocST_UTC(lst, utc)
+
+# lmvt(LocST = lst, utc = utc, ltz = ltz)
 
 
 #Kendall analysis
