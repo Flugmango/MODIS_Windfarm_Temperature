@@ -19,9 +19,9 @@ library(mapview)
 library(bfastSpatial)
 # library(Kendall)
 # library(ggplot2)
-# for as.layer function
-library(latticeExtra)
-library(rts)
+library(latticeExtra) # for as.layer function
+library(gridExtra) # for grid arrangement of spplots
+# library(rts)
 # test <- apply.yearly(rc_full_lst_final, mean)
 #preparation
 setwd("C:/Users/Boris/Documents/MODIS_Windfarm_Temperature")
@@ -164,10 +164,17 @@ rc_full_lst_final <- setZ(rc_full_lst_ordered, years)
 start_time <- Sys.time()
 trendmap <- TrendRaster(rc_full_lst_final, start=c(2000, 2), freq=365, method="AAT", breaks=2)
 end_time <- Sys.time()
-trendmap2 <- TrendRaster(rc_full_lst_final)
 spplot(trendmap2) + as.layer(spplot(windmill_points, pch = 3, edge.col = "white"))
 
-plot(trendmap)
+
+trendmap2 <- TrendRaster(rc_full_lst_final)
+plot(trendmap2)
+
+#experimental
+plots <- lapply(names(trendmap2[1:3]), function(.x) spplot(trendmap2, .x))
+do.call(grid.arrange, plots)
+grid.arrange(spplot(df.voro2, "my.data", xlab = "x", ylab = "y", main = "my title") , 
+             spplot(df.voro, "dummy", xlab = "x2", ylab = "y2", main = "my title2" ))
 #---------------------------
 count_full_lst <- countObs(rc_full_lst_final, navalues = c(0, NA))
 spplot(count_full_lst) + as.layer(spplot(windmill_points, pch = 3, edge.col = "white"))
